@@ -289,7 +289,7 @@ impl AppState {
                 let (front, back) = (data.first().unwrap(), data.last().unwrap());
                 let max = samples.back().unwrap().max;
                 let speed = (back.1 - front.1) / (back.0 - front.0);
-                let eta = (max - back.1) / speed;
+                let eta = (max - front.1) / speed;
                 let eta = if eta >= 0.0 {
                     Some(format_duration(Duration::from_secs(eta as u64)))
                 } else {
@@ -298,7 +298,7 @@ impl AppState {
 
                 Paragraph::new(
                     [
-                        Text::styled(format!("{}", back.1), Style::default()),
+                        Text::styled(format!("{}", front.1), Style::default()),
                         Text::styled("/", Style::default().fg(Color::DarkGray)),
                         Text::styled(format!("{}\n\n", max), Style::default()),
                         Text::styled("ETA ", Style::default().fg(Color::DarkGray)),
@@ -313,7 +313,7 @@ impl AppState {
                 .render(&mut f, status_chunks[0]);
 
                 Gauge::default()
-                    .ratio(back.1 / max)
+                    .ratio(front.1 / max)
                     .style(Style::default().fg(Color::White).bg(Color::Black))
                     .render(&mut f, status_chunks[1]);
             } else {
