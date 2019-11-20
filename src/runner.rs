@@ -1,4 +1,8 @@
-use std::{ffi::OsString, process::{Command, Stdio, ExitStatus},time::Duration};
+use std::{
+    ffi::OsString,
+    process::{Command, ExitStatus, Stdio},
+    time::Duration,
+};
 
 pub type CmdResult = Result<CmdOutput, std::io::Error>;
 

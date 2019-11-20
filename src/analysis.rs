@@ -1,4 +1,7 @@
-use std::{collections::VecDeque,  time::{SystemTime, Instant}};
+use std::{
+    collections::VecDeque,
+    time::{Instant, SystemTime},
+};
 
 use crate::runner::CmdOutput;
 
@@ -9,7 +12,7 @@ pub struct Analyzer {
 #[derive(Debug, Clone, Copy)]
 pub struct Sample {
     // TODO: Customization
-    pub instant:  Instant,
+    pub instant: Instant,
     pub time: SystemTime,
     pub value: f64,
     pub max: f64,
@@ -34,7 +37,12 @@ impl Analyzer {
             let time = SystemTime::now();
             let value: f64 = mat[1].parse().unwrap();
             let max: f64 = mat[2].parse().unwrap();
-            self.samples.push_back(Sample { instant, time, value, max });
+            self.samples.push_back(Sample {
+                instant,
+                time,
+                value,
+                max,
+            });
         }
 
         if self.samples.len() > 1000 {
