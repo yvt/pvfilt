@@ -3,6 +3,7 @@ name = "pvfilt"
 version = "0.1.0"
 authors = ["yvt <i@yvt.jp>"]
 edition = "2018"
+license = "GPL-3.0"
 
 [dependencies]
 tui = { version = "0.6.2", features = ["termion"] }
