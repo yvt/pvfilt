@@ -118,7 +118,10 @@ impl AppState {
                     Axis::default()
                         .title("Value/Second")
                         .bounds(value_range)
-                        .labels(&[format!("{}", value_range[0]), format!("{}", value_range[1])]),
+                        .labels(&[
+                            format!("{:.04e}", value_range[0]),
+                            format!("{:.04e}", value_range[1]),
+                        ]),
                 )
                 .datasets(&[dataset])
                 .render(&mut f, chart_chunks[0]);
