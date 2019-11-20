@@ -68,18 +68,6 @@ impl AppState {
                     (1.0, Instant::now())
                 };
 
-            let value_range = if samples.is_empty() {
-                [0.0, 1.0]
-            } else {
-                use std::f64::NAN;
-                let value_range = [
-                    samples.iter().map(|s| s.value).fold(NAN, f64::min),
-                    samples.iter().map(|s| s.value).fold(NAN, f64::max),
-                ];
-                let width = value_range[1] - value_range[0];
-                [value_range[0] - width * 0.1, value_range[1] + width * 0.1]
-            };
-
             let data: Vec<_> = samples
                 .iter()
                 .rev()
@@ -92,10 +80,26 @@ impl AppState {
                 })
                 .collect();
 
+            let data_rate: Vec<_> = analyze_rate(data.iter().map(|&(t, v)| (-t, v)))
+                .map(|(t, v)| (-t, -v))
+                .collect();
+
+            let value_range = if data_rate.is_empty() {
+                [0.0, 1.0]
+            } else {
+                use std::f64::NAN;
+                let value_range = [
+                    data_rate.iter().map(|s| s.1).fold(NAN, f64::min),
+                    data_rate.iter().map(|s| s.1).fold(NAN, f64::max),
+                ];
+                let width = value_range[1] - value_range[0];
+                [value_range[0] - width * 0.1, value_range[1] + width * 0.1]
+            };
+
             let dataset = Dataset::default()
                 .marker(Marker::Braille)
                 .style(Style::default().fg(Color::Green))
-                .data(&data);
+                .data(&data_rate);
 
             let time_scale_rounded = Duration::from_secs(time_scale as u64);
 
@@ -112,7 +116,7 @@ impl AppState {
                 )
                 .y_axis(
                     Axis::default()
-                        .title("Value")
+                        .title("Value/Second")
                         .bounds(value_range)
                         .labels(&[format!("{}", value_range[0]), format!("{}", value_range[1])]),
                 )
@@ -282,6 +286,27 @@ impl AppState {
         })?;
         Ok(())
     }
+}
+
+/// Given a 2D data series, produce another series representing the increase
+/// rate of the given series.
+fn analyze_rate(data: impl Iterator<Item = (f64, f64)>) -> impl Iterator<Item = (f64, f64)> {
+    data.scan(None, |st, (t, v)| {
+        if let Some((last_t, last_v)) = *st {
+            if v == last_v {
+                Some(None)
+            } else {
+                let ret = (last_t, (v - last_v) / (t - last_t));
+                *st = Some((t, v));
+                Some(Some(ret))
+            }
+        } else {
+            *st = Some((t, v));
+            Some(None)
+        }
+    })
+    .filter_map(|x| x)
+    .skip(1)
 }
 
 lazy_static::lazy_static! {
