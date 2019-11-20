@@ -2,6 +2,8 @@
 
 Reads a program's output and extracts numbers to display a chart, estimated time to complete, and a progress bar.
 
+![](https://yvt.jp/files/programs/pvfilt/pvfilt-2019-11-20.png)
+
 ## Usage
 
 (1) **Watch mode** — Executes a given command periodically like watch(1).
