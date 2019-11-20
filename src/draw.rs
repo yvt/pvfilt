@@ -151,6 +151,18 @@ impl AppState {
                         Text::styled(format!("{}", front.1), Style::default()),
                         Text::styled("/", Style::default().fg(Color::DarkGray)),
                         Text::styled(format!("{}\n\n", max), Style::default()),
+                        Text::styled("Rate ", Style::default().fg(Color::DarkGray)),
+                        if speed > 0.0 {
+                            Text::styled(format!("{:.04e}", speed), Style::default())
+                        } else {
+                            Text::styled("(unknown)", Style::default().fg(Color::DarkGray))
+                        },
+                        if speed > 0.0 {
+                            Text::styled("/sec", Style::default().fg(Color::DarkGray))
+                        } else {
+                            Text::styled("", Style::default().fg(Color::DarkGray))
+                        },
+                        Text::styled("\n\n", Style::default()),
                         Text::styled("ETA ", Style::default().fg(Color::DarkGray)),
                         if let Some(eta) = eta {
                             Text::styled(format!("{}", eta), Style::default())
