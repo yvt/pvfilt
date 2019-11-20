@@ -4,8 +4,10 @@ use std::{
     time::{Duration, Instant},
 };
 use tui::{
-    layout::{Constraint, Direction, Layout},
+    backend::Backend,
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
+    terminal::Frame,
     widgets::{Axis, Block, Borders, Chart, Dataset, Gauge, Marker, Paragraph, Text, Widget},
     Terminal,
 };
@@ -13,10 +15,7 @@ use tui::{
 use super::AppState;
 
 impl AppState {
-    pub(crate) fn draw(
-        &self,
-        terminal: &mut Terminal<impl tui::backend::Backend>,
-    ) -> Result<(), io::Error> {
+    pub(crate) fn draw(&mut self, terminal: &mut Terminal<impl Backend>) -> Result<(), io::Error> {
         terminal.draw(|mut f| {
             let size = f.size();
             let title_style = Style::default().fg(Color::DarkGray);
@@ -273,7 +272,71 @@ impl AppState {
                 }
                 None => {}
             }
+
+            // ---------------------------------------------------------------
+            // Help
+
+            if self.show_help {
+                draw_help(&mut f);
+            }
         })?;
         Ok(())
     }
+}
+
+lazy_static::lazy_static! {
+    static ref HELP_DATA: (Vec<Text<'static>>, u16, u16) = {
+        const TEXT: &str = "\x02        h:\x01 Toggle this help window\n\
+                            \x02 ESC q ^C:\x01 Quit";
+        let width: usize = TEXT.lines().map(|line| line.bytes().filter(|&b| b >= 0x20).count()).max().unwrap();
+        let height = TEXT.lines().count();
+
+        let mut fragments = Vec::new();
+
+        let mut text = TEXT;
+        let mut style = Style::default();
+        loop {
+            if let Some((k, b)) = text.bytes().enumerate().find(|&(_, b)| b < 0x08) {
+                fragments.push(Text::styled(&text[..k], style));
+                match b {
+                    0x01 => style = Style::default(),
+                    0x02 => style = Style::default().fg(Color::LightCyan),
+                    _ => unreachable!(),
+                }
+                text = &text[k + 1..];
+            } else {
+                fragments.push(Text::styled(text, style));
+                break;
+            }
+        }
+
+        (fragments, width as u16, height as u16)
+    };
+}
+
+fn draw_help(f: &mut Frame<impl Backend>) {
+    use std::cmp::min;
+
+    let (frags, width, height) = &*HELP_DATA;
+
+    let size = f.size();
+
+    let width = min(*width, size.width - 5);
+    let height = min(*height, size.height - 5);
+
+    let rect = Rect {
+        x: size.width - width - 4,
+        y: size.height - height - 3,
+        width: width + 3,
+        height: height + 2,
+    };
+
+    Paragraph::new(frags.iter())
+        .block(
+            Block::default()
+                .title("Help")
+                .border_style(Style::default().fg(Color::LightCyan))
+                .borders(Borders::ALL),
+        )
+        .render(f, rect);
 }

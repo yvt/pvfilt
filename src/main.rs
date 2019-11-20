@@ -53,7 +53,10 @@ fn main() -> Result<(), io::Error> {
 
     let worker = start_worker(&mut opt, event_send);
 
-    let app = AppState { worker };
+    let mut app = AppState {
+        worker,
+        show_help: false,
+    };
 
     app.draw(&mut terminal)?;
 
@@ -140,11 +143,12 @@ fn start_worker(cfg: &mut Opt, evt_send: AppEventSender) -> WorkerState {
 
 struct AppState {
     worker: WorkerState,
+    show_help: bool,
 }
 
 impl AppState {
     fn process_event(
-        &self,
+        &mut self,
         e: AppEvent,
         terminal: &mut Terminal<impl tui::backend::Backend>,
     ) -> Result<bool, io::Error> {
@@ -154,6 +158,10 @@ impl AppState {
             | AppEvent::Term(Event::Key(Key::Esc)) => {
                 // Quit
                 return Ok(true);
+            }
+            AppEvent::Term(Event::Key(Key::Char('h'))) => {
+                self.show_help = !self.show_help;
+                self.draw(terminal)?;
             }
             AppEvent::Term(_) => {}
             AppEvent::Resize | AppEvent::Update => {
