@@ -88,12 +88,18 @@ impl AppState {
                 [0.0, 1.0]
             } else {
                 use std::f64::NAN;
-                let value_range = [
+                let range = [
                     data_rate.iter().map(|s| s.1).fold(NAN, f64::min),
                     data_rate.iter().map(|s| s.1).fold(NAN, f64::max),
                 ];
-                let width = value_range[1] - value_range[0];
-                [value_range[0] - width * 0.1, value_range[1] + width * 0.1]
+                let width = range[1] - range[0];
+                let mut value_range = [range[0] - width * 0.1, range[1] + width * 0.1];
+
+                if range[0] >= 0.0 {
+                    value_range[0] = value_range[0].max(0.0);
+                }
+
+                value_range
             };
 
             let dataset = Dataset::default()
