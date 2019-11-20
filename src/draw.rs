@@ -236,18 +236,14 @@ impl AppState {
 
             let last_output = self.worker.last_output.lock().unwrap();
 
+            let mut status_fragments;
+
             match &*last_output {
                 Some(Ok(output)) => {
-                    Paragraph::new(
-                        [Text::styled(
-                            format!("The command exited with {}.", output.status),
-                            Style::default(),
-                        )]
-                        .iter(),
-                    )
-                    .block(b_status)
-                    .wrap(true)
-                    .render(&mut f, out_chunks[2]);
+                    status_fragments = vec![Text::styled(
+                        format!("The command exited with {}.", output.status),
+                        Style::default(),
+                    )];
 
                     let stdout = &output.stdout;
                     let stderr = &output.stderr;
@@ -281,22 +277,34 @@ impl AppState {
                 }
                 Some(Err(e)) => {
                     { b_none }.render(&mut f, out_chunks_merged);
-                    Paragraph::new(
-                        [
-                            Text::styled(
-                                "Failed to run the command.\n\n",
-                                Style::default().fg(Color::Red),
-                            ),
-                            Text::styled(format!("{}", e), Style::default().fg(Color::DarkGray)),
-                        ]
-                        .iter(),
-                    )
-                    .block(b_status)
-                    .wrap(true)
-                    .render(&mut f, out_chunks[2]);
+
+                    status_fragments = vec![
+                        Text::styled(
+                            "Failed to run the command.\n\n",
+                            Style::default().fg(Color::Red),
+                        ),
+                        Text::styled(format!("{}", e), Style::default()),
+                    ];
                 }
-                None => {}
+                None => {
+                    status_fragments = vec![Text::styled(
+                        "The command has not yet been started.",
+                        Style::default(),
+                    )];
+                }
             }
+
+            status_fragments.push(Text::raw("\n\n"));
+            status_fragments.push(Text::styled(
+                "Command\n",
+                Style::default().fg(Color::DarkGray),
+            ));
+            status_fragments.push(Text::styled(&self.cmd_string, Style::default()));
+
+            Paragraph::new(status_fragments.iter())
+                .block(b_status)
+                .wrap(true)
+                .render(&mut f, out_chunks[2]);
 
             // ---------------------------------------------------------------
             // Help

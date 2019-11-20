@@ -51,11 +51,14 @@ fn main() -> Result<(), io::Error> {
 
     watch_resize(event_send.clone())?;
 
+    let cmd_string = cmd_to_string(&opt.cmd);
+
     let worker = start_worker(&mut opt, event_send);
 
     let mut app = AppState {
         worker,
         show_help: false,
+        cmd_string,
     };
 
     app.draw(&mut terminal)?;
@@ -144,6 +147,7 @@ fn start_worker(cfg: &mut Opt, evt_send: AppEventSender) -> WorkerState {
 struct AppState {
     worker: WorkerState,
     show_help: bool,
+    cmd_string: String,
 }
 
 impl AppState {
@@ -170,4 +174,62 @@ impl AppState {
         }
         Ok(false)
     }
+}
+
+fn cmd_to_string(cmd: &[OsString]) -> String {
+    let mut out = String::new();
+
+    for arg in cmd {
+        let arg = arg.to_string_lossy();
+        let arg: &str = &arg;
+        if !out.is_empty() {
+            out.push(' ');
+        }
+
+        if should_quot(arg) {
+            out.push('"');
+            escape(
+                arg,
+                &mut out,
+                &[
+                    ('"', "\\\""),
+                    ('\'', "\\'"),
+                    ('*', "\\*"),
+                    ('[', "\\["),
+                    ('$', "\\$"),
+                ],
+            );
+            out.push('"');
+        } else {
+            escape(arg, &mut out, &[('$', "\\$")]);
+        }
+    }
+
+    fn should_quot(s: &str) -> bool {
+        s.contains(&['"', '\'', '*', '[', ' ', '&', '<', '>', '|', ';'][..]) || s.is_empty()
+    }
+
+    fn escape(mut s: &str, out: &mut String, map: &[(char, &str)]) {
+        loop {
+            if let Some(i) = s
+                .find(|c: char| c.is_control() || map.iter().find(|(from, _)| *from == c).is_some())
+            {
+                out.push_str(&s[0..i]);
+                let ch = s[i..].chars().nth(0).unwrap();
+
+                if let Some((_, map_to)) = map.iter().find(|(from, _)| *from == ch) {
+                    out.push_str(map_to);
+                } else {
+                    out.extend(ch.escape_default());
+                }
+
+                s = &s[i + ch.len_utf8()..];
+            } else {
+                out.push_str(s);
+                break;
+            }
+        }
+    }
+
+    out
 }
